@@ -690,11 +690,11 @@ public class RecentController implements RecentPanelView.OnExitListener,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.SLIM_RECENTS_BLACKLIST_VALUES),
                     false, this, UserHandle.USER_ALL);
-            update();
+            update(true);
         }
 
         @Override
-        protected void update() {
+        protected void update(boolean firstBoot) {
             hideRecents(false);
 
             ContentResolver resolver = mContext.getContentResolver();
@@ -783,6 +783,12 @@ public class RecentController implements RecentPanelView.OnExitListener,
                     Settings.Global.DEVICE_PROVISIONED, 0) != 0
                     && Settings.Secure.getInt(resolver,
                     Settings.Secure.USER_SETUP_COMPLETE, 0) != 0;
+
+            // preload recents after a settings change to refresh the panel
+            // before the user shows it again.
+            if (!firstBoot) {
+                preloadRecentApps();
+            }
         }
     }
 
@@ -792,6 +798,7 @@ public class RecentController implements RecentPanelView.OnExitListener,
             evictAllCaches();
             mIconsHandler.onDpiChanged(mContext);
             rebuildRecentsScreen();
+            preloadRecentApps();
         }
         mConfiguration.updateFrom(newConfig);
         return true;
